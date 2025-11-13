@@ -94,3 +94,25 @@
 .uploadedImage {
   margin-right: 70px;
 }
+
+.uploadedDocPreview {
+  position: absolute;
+  left: 20px;
+  bottom: 56px;
+  max-width: 60%;
+  background: #f8fbff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #e6f0ff;
+  color: #333;
+  font-size: 13px;
+}
+
+.uploadedDocText {
+  margin-top: 6px;
+  color: #666;
+  font-size: 12px;
+  max-height: 56px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

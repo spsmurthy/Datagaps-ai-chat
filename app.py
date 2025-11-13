@@ -600,6 +600,100 @@ def get_frontend_settings():
         return jsonify({"error": str(e)}), 500
 
 
+@bp.route("/upload", methods=["POST"])
+async def upload_file():
+    """Upload a document (pdf, docx, txt, image, etc.), save it under static/uploads and return a short extracted text preview.
+    This is a lightweight ingestion step for quick Q&A; for production you'd want to push documents into a search/indexing pipeline.
+    """
+    try:
+        files = await request.files
+        if not files:
+            return jsonify({"error": "No file uploaded"}), 400
+
+        # take the first file
+        upload_file = list(files.values())[0]
+        filename = upload_file.filename
+        ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
+
+        upload_id = str(uuid.uuid4())
+        upload_dir = os.path.join(os.path.dirname(__file__), 'static', 'uploads')
+        os.makedirs(upload_dir, exist_ok=True)
+        saved_filename = f"{upload_id}_{filename}"
+        saved_path = os.path.join(upload_dir, saved_filename)
+
+        # Read file contents and write to disk
+        file_bytes = await upload_file.read()
+        with open(saved_path, 'wb') as f:
+            f.write(file_bytes)
+
+        # Attempt simple text extraction for common types
+        text_preview = ""
+        try:
+            if ext in ['txt', 'md', 'csv', 'json', 'log']:
+                try:
+                    text_preview = file_bytes.decode('utf-8', errors='replace')
+                except Exception:
+                    text_preview = ''
+
+            elif ext == 'pdf':
+                try:
+                    from PyPDF2 import PdfReader
+                    reader = PdfReader(saved_path)
+                    pages = []
+                    for page in reader.pages:
+                        try:
+                            pages.append(page.extract_text() or '')
+                        except Exception:
+                            continue
+                    text_preview = '\n'.join(pages)
+                except Exception:
+                    text_preview = ''
+
+            elif ext in ['docx']:
+                try:
+                    import docx
+                    doc = docx.Document(saved_path)
+                    paragraphs = [p.text for p in doc.paragraphs]
+                    text_preview = '\n'.join(paragraphs)
+                except Exception:
+                    text_preview = ''
+
+        except Exception:
+            logging.exception('Error during document text extraction')
+            text_preview = ''
+
+        # Truncate preview to a reasonable size
+        max_preview = 4000
+        if text_preview:
+            text_preview = text_preview[:max_preview]
+
+        # Save a simple metadata map for quick lookup
+        metadata_path = os.path.join(upload_dir, 'uploads_metadata.json')
+        try:
+            metadata = {}
+            if os.path.exists(metadata_path):
+                with open(metadata_path, 'r', encoding='utf-8') as mf:
+                    try:
+                        metadata = json.load(mf)
+                    except Exception:
+                        metadata = {}
+            metadata[upload_id] = {
+                'filename': filename,
+                'saved_path': saved_filename,
+                'text_preview': text_preview
+            }
+            with open(metadata_path, 'w', encoding='utf-8') as mf:
+                json.dump(metadata, mf)
+        except Exception:
+            logging.exception('Unable to write uploads metadata')
+
+        return jsonify({'upload_id': upload_id, 'filename': filename, 'text_preview': text_preview}), 200
+
+    except Exception as e:
+        logging.exception('Exception in /upload')
+        return jsonify({'error': str(e)}), 500
+
+
 ## Conversation History API ##
 @bp.route("/history/generate", methods=["POST"])
 async def add_conversation():
