@@ -110,6 +110,7 @@ module backend 'core/host/appservice.bicep' = {
     runtimeVersion: '3.10'
     scmDoBuildDuringDeployment: true
     managedIdentity: true
+    appCommandLine: 'gunicorn --conf gunicorn.conf.py --workers 4 app:app'
     authClientSecret: authClientSecret
     authClientId: authClientId
     authIssuerUri: authIssuerUri
