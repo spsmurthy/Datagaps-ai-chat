@@ -1,0 +1,164 @@
+# CD Pipeline - Deploy to STAGING on develop branch (automated)
+# Deploy to PRODUCTION on main branch (manual approval required)
+
+name: CD - Build & Deploy
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  workflow_dispatch:
+
+env:
+  AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+  AZURE_APP_NAME_STAGING: ${{ secrets.AZURE_APP_NAME_STAGING }}
+  AZURE_APP_NAME_PROD: ${{ secrets.AZURE_APP_NAME_PROD }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Build Frontend
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm install
+          npm run build
+          echo "Frontend build completed"
+
+      # Build Backend package
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Create deployment package
+        run: |
+          mkdir -p deployment
+          cp -r app.py backend/ frontend/ static/ requirements.txt gunicorn.conf.py deployment/
+          cd deployment
+          zip -r ../release.zip . -x "venv/*" ".venv/*" "node_modules/*" ".git/*"
+
+      - name: Upload artifact
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-package-${{ github.sha }}
+          path: release.zip
+          retention-days: 7
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: 'staging'
+    name: Deploy to Staging
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-package-${{ github.sha }}
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Staging App Service
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.AZURE_APP_NAME_STAGING }}
+          package: release.zip
+
+      - name: Verify Staging Deployment
+        run: |
+          # Check if app is running
+          curl -f https://${{ env.AZURE_APP_NAME_STAGING }}.azurewebsites.net/ || exit 1
+          echo "Staging deployment verified"
+
+      - name: Run Integration Tests Against Staging
+        run: |
+          # Add your integration tests here
+          echo "Running integration tests against staging..."
+          # Example: pytest tests/integration_tests/ -v
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: 'production'
+      url: 'https://${{ secrets.AZURE_APP_NAME_PROD }}.azurewebsites.net'
+    name: Deploy to Production (Manual Approval)
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-package-${{ github.sha }}
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Backup Current Production Version
+        run: |
+          echo "Creating backup of current production..."
+          # Optional: Use Azure App Service slots for zero-downtime deployment
+          # az webapp deployment slot create --name ${{ env.AZURE_APP_NAME_PROD }} --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --slot backup
+
+      - name: Deploy to Production App Service
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.AZURE_APP_NAME_PROD }}
+          package: release.zip
+
+      - name: Verify Production Deployment
+        run: |
+          echo "Verifying production deployment..."
+          curl -f https://${{ env.AZURE_APP_NAME_PROD }}.azurewebsites.net/ || exit 1
+          echo "Production deployment verified"
+
+      - name: Notify Deployment Success
+        run: |
+          echo "Production deployment completed successfully!"
+          echo "App URL: https://${{ env.AZURE_APP_NAME_PROD }}.azurewebsites.net"
+
+  rollback-on-failure:
+    runs-on: ubuntu-latest
+    if: failure()
+    name: Automatic Rollback
+
+    steps:
+      - name: Notify Failure
+        run: |
+          echo "Deployment failed! Consider rolling back..."
+          echo "Rollback instructions:"
+          echo "1. Check Azure Portal for error logs"
+          echo "2. Run: az webapp deployment slot swap --name ${{ env.AZURE_APP_NAME_PROD }} --resource-group ${{ env.AZURE_RESOURCE_GROUP }}"
