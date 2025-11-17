@@ -845,6 +845,12 @@ class _AppSettings(BaseModel):
 _app_settings_instance: Optional[_AppSettings] = None
 
 
+def _reset_app_settings():
+    """Reset the app_settings singleton. Used by tests."""
+    global _app_settings_instance
+    _app_settings_instance = None
+
+
 def __getattr__(name: str):
     """Lazy-load app_settings when first accessed."""
     global _app_settings_instance

@@ -87,24 +87,26 @@ USER_AGENT = "GitHubSampleWebApp/AsyncAzureOpenAI/1.0.0"
 
 
 # Frontend Settings via Environment Variables
-frontend_settings = {
-    "auth_enabled": app_settings.base_settings.auth_enabled,
-    "feedback_enabled": (
-        app_settings.chat_history and
-        app_settings.chat_history.enable_feedback
-    ),
-    "ui": {
-        "title": app_settings.ui.title,
-        "logo": app_settings.ui.logo,
-        "chat_logo": app_settings.ui.chat_logo or app_settings.ui.logo,
-        "chat_title": app_settings.ui.chat_title,
-        "chat_description": app_settings.ui.chat_description,
-        "show_share_button": app_settings.ui.show_share_button,
-        "show_chat_history_button": app_settings.ui.show_chat_history_button,
-    },
-    "sanitize_answer": app_settings.base_settings.sanitize_answer,
-    "oyd_enabled": app_settings.base_settings.datasource_type,
-}
+def _build_frontend_settings():
+    """Build frontend settings dict, loaded lazily from app_settings."""
+    return {
+        "auth_enabled": app_settings.base_settings.auth_enabled,
+        "feedback_enabled": (
+            app_settings.chat_history and
+            app_settings.chat_history.enable_feedback
+        ),
+        "ui": {
+            "title": app_settings.ui.title,
+            "logo": app_settings.ui.logo,
+            "chat_logo": app_settings.ui.chat_logo or app_settings.ui.logo,
+            "chat_title": app_settings.ui.chat_title,
+            "chat_description": app_settings.ui.chat_description,
+            "show_share_button": app_settings.ui.show_share_button,
+            "show_chat_history_button": app_settings.ui.show_chat_history_button,
+        },
+        "sanitize_answer": app_settings.base_settings.sanitize_answer,
+        "oyd_enabled": app_settings.base_settings.datasource_type,
+    }
 
 
 # Enable Microsoft Defender for Cloud Integration
@@ -594,7 +596,7 @@ async def conversation():
 @bp.route("/frontend_settings", methods=["GET"])
 def get_frontend_settings():
     try:
-        return jsonify(frontend_settings), 200
+        return jsonify(_build_frontend_settings()), 200
     except Exception as e:
         logging.exception("Exception in /frontend_settings")
         return jsonify({"error": str(e)}), 500
