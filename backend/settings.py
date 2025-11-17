@@ -35,13 +35,20 @@ def get_dotenv_path() -> str:
     )
 
 
+def _load_dotenv_to_env():
+    """Load .env file into os.environ before settings instantiation."""
+    dotenv_path = get_dotenv_path()
+    if os.path.exists(dotenv_path):
+        from dotenv import load_dotenv
+        load_dotenv(dotenv_path, override=True)
+
+
 MINIMUM_SUPPORTED_AZURE_OPENAI_PREVIEW_API_VERSION = "2024-05-01-preview"
 
 
 class _UiSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="UI_",
-        env_file=get_dotenv_path(),
         extra="ignore",
         env_ignore_empty=True
     )
@@ -59,7 +66,6 @@ class _UiSettings(BaseSettings):
 class _ChatHistorySettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="AZURE_COSMOSDB_",
-        env_file=get_dotenv_path(),
         extra="ignore",
         env_ignore_empty=True
     )
@@ -74,7 +80,6 @@ class _ChatHistorySettings(BaseSettings):
 class _PromptflowSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="PROMPTFLOW_",
-        env_file=get_dotenv_path(),
         extra="ignore",
         env_ignore_empty=True
     )
@@ -101,7 +106,6 @@ class _AzureOpenAITool(BaseModel):
 class _AzureOpenAISettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="AZURE_OPENAI_",
-        env_file=get_dotenv_path(),
         extra='ignore',
         env_ignore_empty=True
     )
@@ -210,7 +214,6 @@ class _AzureOpenAISettings(BaseSettings):
 class _SearchCommonSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="SEARCH_",
-        env_file=get_dotenv_path(),
         extra="ignore",
         env_ignore_empty=True
     )
@@ -251,7 +254,6 @@ class DatasourcePayloadConstructor(BaseModel, ABC):
 class _AzureSearchSettings(BaseSettings, DatasourcePayloadConstructor):
     model_config = SettingsConfigDict(
         env_prefix="AZURE_SEARCH_",
-        env_file=get_dotenv_path(),
         extra="ignore",
         env_ignore_empty=True
     )
@@ -366,7 +368,6 @@ class _AzureCosmosDbMongoVcoreSettings(
 ):
     model_config = SettingsConfigDict(
         env_prefix="AZURE_COSMOSDB_MONGO_VCORE_",
-        env_file=get_dotenv_path(),
         extra="ignore",
         env_ignore_empty=True
     )
@@ -435,7 +436,6 @@ class _AzureCosmosDbMongoVcoreSettings(
 class _ElasticsearchSettings(BaseSettings, DatasourcePayloadConstructor):
     model_config = SettingsConfigDict(
         env_prefix="ELASTICSEARCH_",
-        env_file=get_dotenv_path(),
         extra="ignore",
         env_ignore_empty=True
     )
@@ -508,7 +508,6 @@ class _ElasticsearchSettings(BaseSettings, DatasourcePayloadConstructor):
 class _PineconeSettings(BaseSettings, DatasourcePayloadConstructor):
     model_config = SettingsConfigDict(
         env_prefix="PINECONE_",
-        env_file=get_dotenv_path(),
         extra="ignore",
         env_ignore_empty=True
     )
@@ -578,7 +577,6 @@ class _PineconeSettings(BaseSettings, DatasourcePayloadConstructor):
 class _AzureMLIndexSettings(BaseSettings, DatasourcePayloadConstructor):
     model_config = SettingsConfigDict(
         env_prefix="AZURE_MLINDEX_",
-        env_file=get_dotenv_path(),
         extra="ignore",
         env_ignore_empty=True
     )
@@ -634,7 +632,6 @@ class _AzureMLIndexSettings(BaseSettings, DatasourcePayloadConstructor):
 class _AzureSqlServerSettings(BaseSettings, DatasourcePayloadConstructor):
     model_config = SettingsConfigDict(
         env_prefix="AZURE_SQL_SERVER_",
-        env_file=get_dotenv_path(),
         extra="ignore",
         env_ignore_empty=True
     )
@@ -681,7 +678,6 @@ class _AzureSqlServerSettings(BaseSettings, DatasourcePayloadConstructor):
 class _MongoDbSettings(BaseSettings, DatasourcePayloadConstructor):
     model_config = SettingsConfigDict(
         env_prefix="MONGODB_",
-        env_file=get_dotenv_path(),
         extra="ignore",
         env_ignore_empty=True
     )
@@ -757,7 +753,6 @@ class _MongoDbSettings(BaseSettings, DatasourcePayloadConstructor):
         
 class _BaseSettings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=get_dotenv_path(),
         extra="ignore",
         arbitrary_types_allowed=True,
         env_ignore_empty=True
@@ -803,31 +798,31 @@ class _AppSettings(BaseModel):
     def set_datasource_settings(self) -> Self:
         try:
             if self.base_settings.datasource_type == "AzureCognitiveSearch":
-                self.datasource = _AzureSearchSettings(settings=self, _env_file=get_dotenv_path())
+                self.datasource = _AzureSearchSettings(settings=self)
                 logging.debug("Using Azure Cognitive Search")
             
             elif self.base_settings.datasource_type == "AzureCosmosDB":
-                self.datasource = _AzureCosmosDbMongoVcoreSettings(settings=self, _env_file=get_dotenv_path())
+                self.datasource = _AzureCosmosDbMongoVcoreSettings(settings=self)
                 logging.debug("Using Azure CosmosDB Mongo vcore")
             
             elif self.base_settings.datasource_type == "Elasticsearch":
-                self.datasource = _ElasticsearchSettings(settings=self, _env_file=get_dotenv_path())
+                self.datasource = _ElasticsearchSettings(settings=self)
                 logging.debug("Using Elasticsearch")
             
             elif self.base_settings.datasource_type == "Pinecone":
-                self.datasource = _PineconeSettings(settings=self, _env_file=get_dotenv_path())
+                self.datasource = _PineconeSettings(settings=self)
                 logging.debug("Using Pinecone")
             
             elif self.base_settings.datasource_type == "AzureMLIndex":
-                self.datasource = _AzureMLIndexSettings(settings=self, _env_file=get_dotenv_path())
+                self.datasource = _AzureMLIndexSettings(settings=self)
                 logging.debug("Using Azure ML Index")
             
             elif self.base_settings.datasource_type == "AzureSqlServer":
-                self.datasource = _AzureSqlServerSettings(settings=self, _env_file=get_dotenv_path())
+                self.datasource = _AzureSqlServerSettings(settings=self)
                 logging.debug("Using SQL Server")
             
             elif self.base_settings.datasource_type == "MongoDB":
-                self.datasource = _MongoDbSettings(settings=self, _env_file=get_dotenv_path())
+                self.datasource = _MongoDbSettings(settings=self)
                 logging.debug("Using Mongo DB")
                 
             else:
@@ -862,6 +857,8 @@ def __getattr__(name: str):
         if _app_settings_dotenv_path != current_dotenv_path:
             _app_settings_instance = None
             _app_settings_dotenv_path = current_dotenv_path
+            # Load new env file into environment
+            _load_dotenv_to_env()
         # Create singleton if needed
         if _app_settings_instance is None:
             _app_settings_instance = _AppSettings()
