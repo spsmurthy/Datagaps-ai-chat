@@ -843,18 +843,26 @@ class _AppSettings(BaseModel):
 
 # Lazy-load singleton to support test environment overrides
 _app_settings_instance: Optional[_AppSettings] = None
+_app_settings_dotenv_path: Optional[str] = None
 
 
 def _reset_app_settings():
     """Reset the app_settings singleton. Used by tests."""
-    global _app_settings_instance
+    global _app_settings_instance, _app_settings_dotenv_path
     _app_settings_instance = None
+    _app_settings_dotenv_path = None
 
 
 def __getattr__(name: str):
-    """Lazy-load app_settings when first accessed."""
-    global _app_settings_instance
+    """Lazy-load app_settings when first accessed, resetting if DOTENV_PATH changes."""
+    global _app_settings_instance, _app_settings_dotenv_path
     if name == "app_settings":
+        current_dotenv_path = get_dotenv_path()
+        # Reset if DOTENV_PATH has changed (test override scenario)
+        if _app_settings_dotenv_path != current_dotenv_path:
+            _app_settings_instance = None
+            _app_settings_dotenv_path = current_dotenv_path
+        # Create singleton if needed
         if _app_settings_instance is None:
             _app_settings_instance = _AppSettings()
         return _app_settings_instance
