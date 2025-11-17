@@ -764,10 +764,10 @@ class _BaseSettings(BaseSettings):
 
 
 class _AppSettings(BaseModel):
-    base_settings: _BaseSettings = _BaseSettings()
-    azure_openai: _AzureOpenAISettings = _AzureOpenAISettings()
-    search: _SearchCommonSettings = _SearchCommonSettings()
-    ui: Optional[_UiSettings] = _UiSettings()
+    base_settings: _BaseSettings = Field(default_factory=_BaseSettings)
+    azure_openai: _AzureOpenAISettings = Field(default_factory=_AzureOpenAISettings)
+    search: _SearchCommonSettings = Field(default_factory=_SearchCommonSettings)
+    ui: Optional[_UiSettings] = Field(default_factory=_UiSettings)
     
     # Constructed properties
     chat_history: Optional[_ChatHistorySettings] = None
