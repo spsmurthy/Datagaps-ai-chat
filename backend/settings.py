@@ -841,4 +841,15 @@ class _AppSettings(BaseModel):
             logging.warning(e.errors())
 
 
-app_settings = _AppSettings()
+# Lazy-load singleton to support test environment overrides
+_app_settings_instance: Optional[_AppSettings] = None
+
+
+def __getattr__(name: str):
+    """Lazy-load app_settings when first accessed."""
+    global _app_settings_instance
+    if name == "app_settings":
+        if _app_settings_instance is None:
+            _app_settings_instance = _AppSettings()
+        return _app_settings_instance
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
