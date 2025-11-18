@@ -639,7 +639,7 @@ async def upload_file():
         saved_path = os.path.join(upload_dir, saved_filename)
 
         # Read file contents and write to disk
-        file_bytes = await upload_file.read()
+        file_bytes = upload_file.read()
         with open(saved_path, 'wb') as f:
             f.write(file_bytes)
 
