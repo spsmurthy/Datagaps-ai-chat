@@ -1,11 +1,13 @@
 .container {
   max-height: calc(100vh - 100px);
   width: 300px;
+  background-color: #f8fcfa;
 }
 
 .listContainer {
   overflow: hidden auto;
   max-height: calc(90vh - 105px);
+  padding: 8px;
 }
 
 .itemCell {
@@ -17,12 +19,18 @@
   padding-top: 5px;
   padding-bottom: 5px;
   box-sizing: border-box;
-  border-radius: 5px;
+  border-radius: 8px;
   display: flex;
+  background-color: #ffffff;
+  border: 1px solid #e0f2ec;
+  margin-bottom: 6px;
+  transition: all 0.2s ease;
 }
 
 .itemCell:hover {
-  background: #e6e6e6;
+  background: #e6f7f0;
+  border-color: #00864E;
+  box-shadow: 0 2px 4px rgba(0, 134, 78, 0.1);
 }
 
 .itemButton {
@@ -31,15 +39,18 @@
   align-items: center;
   width: 28px;
   height: 28px;
-  border: 1px solid #d1d1d1;
+  border: 1px solid #00864E;
   border-radius: 5px;
   background-color: white;
   margin: auto 2.5px;
   cursor: pointer;
+  color: #00864E;
+  transition: all 0.2s ease;
 }
 
 .itemButton:hover {
-  background-color: #e6e6e6;
+  background-color: #00864E;
+  color: white;
 }
 
 .chatGroup {
@@ -61,8 +72,9 @@
 .chatMonth {
   font-size: 14px;
   font-weight: 600;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
   padding-left: 15px;
+  color: #00864E;
 }
 
 .chatTitle {
@@ -70,6 +82,8 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  color: #2d2d2d;
+  font-weight: 500;
 }
 
 @media (max-width: 480px) {
