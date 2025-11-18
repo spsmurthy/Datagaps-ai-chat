@@ -21,6 +21,7 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, conv
   const [question, setQuestion] = useState<string>('')
   const [base64Image, setBase64Image] = useState<string | null>(null);
   const [docPreview, setDocPreview] = useState<string | null>(null);
+  const [docFullText, setDocFullText] = useState<string | null>(null);
   const [docFilename, setDocFilename] = useState<string | null>(null);
   const [docUploadId, setDocUploadId] = useState<string | null>(null);
 
@@ -60,7 +61,8 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, conv
         console.log('Upload successful:', result);
         
         if (result.extracted_text) {
-          setDocPreview(result.extracted_text.substring(0, 200) + '...');
+          setDocFullText(result.extracted_text); // Store full text for sending
+          setDocPreview(result.extracted_text.substring(0, 100) + '...'); // Just for display
           setDocFilename(result.filename);
           setDocUploadId(result.upload_id);
         } else {
@@ -94,9 +96,9 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, conv
 
     let questionText = question;
 
-    // If document is uploaded, append extracted text to the question
-    if (docPreview && docUploadId) {
-      questionText += `\n\n[Document: ${docFilename}]\n${docPreview}`;
+    // If document is uploaded, append full extracted text to the question with proper context
+    if (docFullText && docUploadId) {
+      questionText = `${question}\n\n--- Document Content (${docFilename}) ---\n${docFullText}\n--- End of Document ---\n\nPlease analyze the above document and answer my question.`;
     }
 
     const questionTest: ChatMessage["content"] = base64Image ? [{ type: "text", text: questionText }, { type: "image_url", image_url: { url: base64Image } }] : questionText.toString();
@@ -105,12 +107,14 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, conv
       onSend(questionTest, conversationId)
       setBase64Image(null)
       setDocPreview(null)
+      setDocFullText(null)
       setDocFilename(null)
       setDocUploadId(null)
     } else {
       onSend(questionTest)
       setBase64Image(null)
       setDocPreview(null)
+      setDocFullText(null)
       setDocFilename(null)
       setDocUploadId(null)
     }
@@ -172,6 +176,7 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, conv
             onClick={() => {
               setDocFilename(null);
               setDocPreview(null);
+              setDocFullText(null);
               setDocUploadId(null);
             }}
             aria-label="Remove attachment"
