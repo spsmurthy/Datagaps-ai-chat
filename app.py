@@ -54,7 +54,8 @@ def create_app():
         except Exception as e:
             logging.exception("Failed to initialize CosmosDB client")
             app.cosmos_conversation_client = None
-            raise e
+            # Don't raise - allow app to start without CosmosDB
+            cosmos_db_ready.set()
     
     return app
 
