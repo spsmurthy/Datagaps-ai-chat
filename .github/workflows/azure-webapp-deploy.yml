@@ -40,14 +40,29 @@ jobs:
           cd frontend
           npm run build
 
+      - name: Create deployment package
+        run: |
+          mkdir -p deploy
+          cp -r backend deploy/
+          cp -r static deploy/
+          cp -r data deploy/
+          cp app.py deploy/
+          cp gunicorn.conf.py deploy/
+          cp requirements.txt deploy/
+          echo "SCM_DO_BUILD_DURING_DEPLOYMENT=false" > deploy/.deployment
+
       - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Disable build on deployment
+        run: |
+          az webapp config appsettings set --name 38e7b35b-464c-5313-a1f5-cdd3925fd29b --resource-group EnterpriseAIWebChat --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: '38e7b35b-464c-5313-a1f5-cdd3925fd29b'
           slot-name: 'Production'
-          package: .
+          package: deploy
