@@ -31,10 +31,14 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, conv
     const file = event.target.files?.[0];
 
     if (file) {
+      console.log('File selected:', file.name, 'Type:', file.type);
+      
       // Check if it's an image or document
       if (file.type.startsWith('image/')) {
+        console.log('Processing as image');
         await convertToBase64(file);
       } else {
+        console.log('Processing as document');
         // Handle document upload (PDF, DOCX, TXT)
         await uploadDocument(file);
       }
@@ -53,14 +57,26 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, conv
 
       if (response.ok) {
         const result = await response.json();
-        setDocPreview(result.extracted_text?.substring(0, 200) + '...');
-        setDocFilename(result.filename);
-        setDocUploadId(result.upload_id);
+        console.log('Upload successful:', result);
+        
+        if (result.extracted_text) {
+          setDocPreview(result.extracted_text.substring(0, 200) + '...');
+          setDocFilename(result.filename);
+          setDocUploadId(result.upload_id);
+          alert(`Document "${result.filename}" uploaded successfully!`);
+        } else {
+          alert(`Document "${result.filename}" uploaded, but no text could be extracted.`);
+          setDocFilename(result.filename);
+          setDocUploadId(result.upload_id);
+        }
       } else {
-        console.error('Upload failed:', await response.text());
+        const errorText = await response.text();
+        console.error('Upload failed:', errorText);
+        alert(`Upload failed: ${errorText}`);
       }
     } catch (error) {
       console.error('Error uploading document:', error);
+      alert(`Error uploading document: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
