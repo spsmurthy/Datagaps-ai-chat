@@ -652,12 +652,50 @@ async def upload_file():
                 except Exception:
                     text_preview = ''
 
-            elif ext in ['docx']:
+            elif ext in ['docx', 'doc']:
                 try:
                     import docx
                     doc = docx.Document(saved_path)
                     paragraphs = [p.text for p in doc.paragraphs]
                     text_preview = '\n'.join(paragraphs)
+                except Exception:
+                    text_preview = ''
+
+            elif ext in ['pptx', 'ppt']:
+                try:
+                    from pptx import Presentation
+                    prs = Presentation(saved_path)
+                    text_runs = []
+                    for slide in prs.slides:
+                        for shape in slide.shapes:
+                            if hasattr(shape, "text"):
+                                text_runs.append(shape.text)
+                    text_preview = '\n'.join(text_runs)
+                except Exception:
+                    text_preview = ''
+
+            elif ext in ['xlsx', 'xls']:
+                try:
+                    from openpyxl import load_workbook
+                    wb = load_workbook(saved_path, data_only=True)
+                    text_runs = []
+                    for sheet_name in wb.sheetnames:
+                        ws = wb[sheet_name]
+                        text_runs.append(f"Sheet: {sheet_name}")
+                        for row in ws.iter_rows(values_only=True):
+                            row_text = '\t'.join([str(cell) if cell is not None else '' for cell in row])
+                            if row_text.strip():
+                                text_runs.append(row_text)
+                    text_preview = '\n'.join(text_runs)
+                except Exception:
+                    text_preview = ''
+
+            elif ext == 'rtf':
+                try:
+                    from striprtf.striprtf import rtf_to_text
+                    with open(saved_path, 'r', encoding='utf-8', errors='ignore') as rtf_file:
+                        rtf_content = rtf_file.read()
+                        text_preview = rtf_to_text(rtf_content)
                 except Exception:
                     text_preview = ''
 
