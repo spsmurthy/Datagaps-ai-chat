@@ -18,6 +18,7 @@ const Layout = () => {
   const [hideHistoryLabel, setHideHistoryLabel] = useState<string>('Hide chat history')
   const [showHistoryLabel, setShowHistoryLabel] = useState<string>('Show chat history')
   const [logo, setLogo] = useState('')
+  const [userName, setUserName] = useState<string>('')
   const appStateContext = useContext(AppStateContext)
   const ui = appStateContext?.state.frontendSettings?.ui
 
@@ -43,6 +44,7 @@ const Layout = () => {
   useEffect(() => {
     if (!appStateContext?.state.isLoading) {
       setLogo(ui?.logo || DatagapsLogo)
+      setUserName(appStateContext?.state.frontendSettings?.user?.name || '')
     }
   }, [appStateContext?.state.isLoading])
 
@@ -84,6 +86,11 @@ const Layout = () => {
             </Link>
           </Stack>
           <Stack horizontal tokens={{ childrenGap: 4 }} className={styles.shareButtonContainer}>
+            {userName && (
+              <Stack horizontal verticalAlign="center" className={styles.userInfo}>
+                <span className={styles.userName}>{userName}</span>
+              </Stack>
+            )}
             {appStateContext?.state.isCosmosDBAvailable?.status !== CosmosDBStatus.NotConfigured && ui?.show_chat_history_button !== false && (
               <HistoryButton
                 onClick={handleHistoryClick}

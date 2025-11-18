@@ -110,6 +110,20 @@ def _build_frontend_settings():
     }
 
 
+@bp.get("/getconfig")
+async def get_config():
+    """Return frontend configuration including user information."""
+    user_info = get_authenticated_user_details(request_headers=request.headers)
+    
+    config = _build_frontend_settings()
+    config["user"] = {
+        "name": user_info.get('user_name', 'Guest'),
+        "principal_id": user_info.get('user_principal_id'),
+    }
+    
+    return jsonify(config)
+
+
 # Enable Microsoft Defender for Cloud Integration
 MS_DEFENDER_ENABLED = os.environ.get("MS_DEFENDER_ENABLED", "true").lower() == "true"
 

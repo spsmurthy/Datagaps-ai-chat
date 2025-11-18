@@ -102,6 +102,24 @@
   color: #242424;
 }
 
+.userInfo {
+  margin-right: 16px;
+}
+
+.userName {
+  font-style: normal;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  color: #00864E;
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  background-color: #f0f9f5;
+  border-radius: 16px;
+  border: 1px solid #00864E;
+}
+
 @media (max-width: 480px) {
   .headerTitleContainer {
     margin-left: 4px;
