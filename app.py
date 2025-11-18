@@ -21,6 +21,8 @@ from azure.identity.aio import (
     DefaultAzureCredential,
     get_bearer_token_provider
 )
+from azure.core.credentials import AzureKeyCredential
+from azure.ai.formrecognizer import DocumentAnalysisClient
 from backend.auth.auth_utils import get_authenticated_user_details
 from backend.security.ms_defender_utils import get_msdefender_user_json
 from backend.history.cosmosdbservice import CosmosConversationClient
@@ -617,6 +619,58 @@ def get_frontend_settings():
         return jsonify({"error": str(e)}), 500
 
 
+def extract_text_with_document_intelligence(file_path):
+    """
+    Extract text from documents using Azure Document Intelligence (Form Recognizer).
+    Supports PDFs, images, and Office documents with better accuracy and structure preservation.
+    """
+    try:
+        # Get Document Intelligence credentials from environment
+        endpoint = os.environ.get("AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT")
+        key = os.environ.get("AZURE_DOCUMENT_INTELLIGENCE_KEY")
+        
+        if not endpoint or not key:
+            logging.warning("Document Intelligence not configured, falling back to basic extraction")
+            return None
+        
+        # Create Document Analysis client
+        credential = AzureKeyCredential(key)
+        document_analysis_client = DocumentAnalysisClient(endpoint=endpoint, credential=credential)
+        
+        # Read the file
+        with open(file_path, "rb") as f:
+            poller = document_analysis_client.begin_analyze_document("prebuilt-read", document=f)
+            result = poller.result()
+        
+        # Extract text with page preservation
+        extracted_text = []
+        for page_num, page in enumerate(result.pages, start=1):
+            page_text = []
+            # Get all lines from the page
+            for line in page.lines if hasattr(page, 'lines') else []:
+                page_text.append(line.content)
+            
+            if page_text:
+                extracted_text.append(f"--- Page {page_num} ---\n" + "\n".join(page_text))
+        
+        # Also extract tables if present
+        if result.tables:
+            table_text = ["\n--- Tables ---"]
+            for table_idx, table in enumerate(result.tables, start=1):
+                table_text.append(f"\nTable {table_idx}:")
+                for cell in table.cells:
+                    table_text.append(f"Row {cell.row_index}, Col {cell.column_index}: {cell.content}")
+            extracted_text.extend(table_text)
+        
+        full_text = "\n\n".join(extracted_text)
+        logging.info(f"Document Intelligence extracted {len(full_text)} characters from {os.path.basename(file_path)}")
+        return full_text
+        
+    except Exception as e:
+        logging.exception(f"Error using Document Intelligence: {e}")
+        return None
+
+
 @bp.route("/upload", methods=["POST"])
 async def upload_file():
     """Upload a document (pdf, docx, txt, image, etc.), save it under static/uploads and return a short extracted text preview.
@@ -643,27 +697,34 @@ async def upload_file():
         with open(saved_path, 'wb') as f:
             f.write(file_bytes)
 
-        # Attempt simple text extraction for common types
+        # Try Azure Document Intelligence first for better extraction (PDF, images, Office docs)
         text_preview = ""
-        try:
-            if ext in ['txt', 'md', 'csv', 'json', 'log']:
-                try:
-                    text_preview = file_bytes.decode('utf-8', errors='replace')
-                except Exception:
-                    text_preview = ''
+        use_document_intelligence = ext in ['pdf', 'docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'png', 'jpg', 'jpeg', 'tiff', 'bmp']
+        
+        if use_document_intelligence:
+            text_preview = extract_text_with_document_intelligence(saved_path)
+        
+        # Fallback to basic text extraction if Document Intelligence not available or failed
+        if not text_preview:
+            try:
+                if ext in ['txt', 'md', 'csv', 'json', 'log']:
+                    try:
+                        text_preview = file_bytes.decode('utf-8', errors='replace')
+                    except Exception:
+                        text_preview = ''
 
-            elif ext == 'pdf':
-                try:
-                    from PyPDF2 import PdfReader
-                    reader = PdfReader(saved_path)
-                    pages = []
-                    for page in reader.pages:
-                        try:
-                            pages.append(page.extract_text() or '')
-                        except Exception:
-                            continue
-                    text_preview = '\n'.join(pages)
-                except Exception:
+                elif ext == 'pdf':
+                    try:
+                        from PyPDF2 import PdfReader
+                        reader = PdfReader(saved_path)
+                        pages = []
+                        for page in reader.pages:
+                            try:
+                                pages.append(page.extract_text() or '')
+                            except Exception:
+                                continue
+                        text_preview = '\n'.join(pages)
+                    except Exception:
                     text_preview = ''
 
             elif ext in ['docx', 'doc']:
@@ -713,9 +774,9 @@ async def upload_file():
                 except Exception:
                     text_preview = ''
 
-        except Exception:
-            logging.exception('Error during document text extraction')
-            text_preview = ''
+            except Exception:
+                logging.exception('Error during document text extraction')
+                text_preview = ''
 
         # Truncate preview to support larger documents (up to ~100K chars for GPT-4)
         # This allows for documents up to ~25K words to be fully processed
