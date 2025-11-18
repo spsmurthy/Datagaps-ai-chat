@@ -51,3 +51,11 @@ jobs:
           app-name: '38e7b35b-464c-5313-a1f5-cdd3925fd29b'
           slot-name: 'Production'
           package: .
+      
+      - name: Ensure Python runtime
+        run: |
+          az rest --method patch --uri "/subscriptions/bae7fe23-95a8-4799-88e8-471689705000/resourceGroups/EnterpriseAIWebChat/providers/Microsoft.Web/sites/38e7b35b-464c-5313-a1f5-cdd3925fd29b/config/web?api-version=2022-03-01" --body '{"properties":{"linuxFxVersion":"PYTHON|3.11"}}'
+      
+      - name: Restart app
+        run: |
+          az webapp restart --name 38e7b35b-464c-5313-a1f5-cdd3925fd29b --resource-group EnterpriseAIWebChat
