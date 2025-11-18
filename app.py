@@ -742,7 +742,7 @@ async def upload_file():
         except Exception:
             logging.exception('Unable to write uploads metadata')
 
-        return jsonify({'upload_id': upload_id, 'filename': filename, 'text_preview': text_preview}), 200
+        return jsonify({'upload_id': upload_id, 'filename': filename, 'extracted_text': text_preview}), 200
 
     except Exception as e:
         logging.exception('Exception in /upload')
