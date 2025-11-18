@@ -717,8 +717,9 @@ async def upload_file():
             logging.exception('Error during document text extraction')
             text_preview = ''
 
-        # Truncate preview to a reasonable size
-        max_preview = 4000
+        # Truncate preview to support larger documents (up to ~100K chars for GPT-4)
+        # This allows for documents up to ~25K words to be fully processed
+        max_preview = 100000
         if text_preview:
             text_preview = text_preview[:max_preview]
 
@@ -742,7 +743,14 @@ async def upload_file():
         except Exception:
             logging.exception('Unable to write uploads metadata')
 
-        return jsonify({'upload_id': upload_id, 'filename': filename, 'extracted_text': text_preview}), 200
+        return jsonify({
+            'upload_id': upload_id, 
+            'filename': filename, 
+            'extracted_text': text_preview,
+            'file_size': len(text_preview),
+            'file_path': saved_path,
+            'file_type': ext
+        }), 200
 
     except Exception as e:
         logging.exception('Exception in /upload')

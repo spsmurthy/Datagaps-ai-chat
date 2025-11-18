@@ -59,6 +59,7 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, conv
       if (response.ok) {
         const result = await response.json();
         console.log('Upload successful:', result);
+        console.log('Document size:', result.file_size, 'characters');
         
         if (result.extracted_text) {
           setDocFullText(result.extracted_text); // Store full text for sending
