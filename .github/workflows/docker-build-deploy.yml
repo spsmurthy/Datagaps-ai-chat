@@ -1,10 +1,11 @@
-name: Build and Deploy Docker Image to Azure Web App
+name: Build and Deploy Docker Image to Azure Web App (DISABLED)
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
+  # Disabled auto-trigger - using Python deployment instead
+  # push:
+  #   branches:
+  #     - main
 
 env:
   AZURE_WEBAPP_NAME: 38e7b35b-464c-5313-a1f5-cdd3925fd29b

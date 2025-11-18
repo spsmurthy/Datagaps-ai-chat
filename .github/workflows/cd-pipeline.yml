@@ -1,14 +1,16 @@
 # CD Pipeline - Deploy to STAGING on develop branch (automated)
 # Deploy to PRODUCTION on main branch (manual approval required)
+# DISABLED - Using azure-webapp-deploy.yml instead
 
-name: CD - Build & Deploy
+name: CD - Build & Deploy (DISABLED)
 
 on:
-  push:
-    branches:
-      - develop
-      - main
   workflow_dispatch:
+  # Disabled auto-trigger - using azure-webapp-deploy.yml instead
+  # push:
+  #   branches:
+  #     - develop
+  #     - main
 
 env:
   AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
