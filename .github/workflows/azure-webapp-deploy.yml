@@ -40,29 +40,6 @@ jobs:
           cd frontend
           npm run build
 
-      # Optional: Run tests here
-      # - name: Run Python tests
-      #   run: pytest tests/unit_tests/ -v
-      # - name: Run frontend tests
-      #   run: cd frontend && npm test -- --coverage --watchAll=false
-
-      - name: Zip artifact for deployment
-        run: zip -r release.zip . -x "venv/*"
-
-      - name: Upload artifact for deployment jobs
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release
-          path: release.zip
-
-      - name: Download artifact for deployment
-        uses: actions/download-artifact@v4
-        with:
-          name: app-release
-
-      - name: Unzip artifact
-        run: unzip release.zip
-
       - name: Azure Login
         uses: azure/login@v1
         with:
@@ -71,6 +48,6 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: ${{ secrets.AZUREAPPSERVICE_APPNAME }}
+          app-name: '38e7b35b-464c-5313-a1f5-cdd3925fd29b'
           slot-name: 'Production'
-          package: release.zip
+          package: .

@@ -1,0 +1,44 @@
+name: Build and Deploy Docker Image to Azure Web App
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: 38e7b35b-464c-5313-a1f5-cdd3925fd29b
+  RESOURCE_GROUP: EnterpriseAIWebChat
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Build Docker image
+        run: |
+          docker build -f WebApp.Dockerfile -t datagaps-ai-chat:${{ github.sha }} -t datagaps-ai-chat:latest .
+
+      - name: Save Docker image as tar
+        run: |
+          docker save datagaps-ai-chat:latest -o datagaps-ai-chat.tar
+
+      - name: Upload Docker image to Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          images: 'datagaps-ai-chat:latest'
+
+      - name: Restart Web App
+        run: |
+          az webapp restart --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }}
