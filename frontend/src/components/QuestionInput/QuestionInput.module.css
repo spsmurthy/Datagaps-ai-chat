@@ -95,6 +95,57 @@
   margin-right: 70px;
 }
 
+.attachmentBadge {
+  position: absolute;
+  left: 20px;
+  bottom: 56px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #e6f7f0;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid #00864E;
+  color: #00864E;
+  font-size: 13px;
+  font-weight: 500;
+  max-width: 300px;
+}
+
+.attachmentIcon {
+  font-size: 14px;
+  color: #00864E;
+}
+
+.attachmentName {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.removeAttachment {
+  background: none;
+  border: none;
+  color: #00864E;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+  margin-left: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.removeAttachment:hover {
+  background-color: #00864E;
+  color: white;
+}
+
 .uploadedDocPreview {
   position: absolute;
   left: 20px;
@@ -116,3 +167,4 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+

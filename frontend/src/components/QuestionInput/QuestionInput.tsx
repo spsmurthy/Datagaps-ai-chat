@@ -63,9 +63,7 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, conv
           setDocPreview(result.extracted_text.substring(0, 200) + '...');
           setDocFilename(result.filename);
           setDocUploadId(result.upload_id);
-          alert(`Document "${result.filename}" uploaded successfully!`);
         } else {
-          alert(`Document "${result.filename}" uploaded, but no text could be extracted.`);
           setDocFilename(result.filename);
           setDocUploadId(result.upload_id);
         }
@@ -165,11 +163,21 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, conv
           </label>
         </div>)}
       {base64Image && <img className={styles.uploadedImage} src={base64Image} alt="Uploaded Preview" />}
-      {docPreview && (
-        <div className={styles.uploadedDocPreview}>
-          <div className={styles.uploadedDocText}>
-            {docFilename}: {docPreview}
-          </div>
+      {docFilename && (
+        <div className={styles.attachmentBadge}>
+          <FontIcon iconName="Attach" className={styles.attachmentIcon} />
+          <span className={styles.attachmentName}>{docFilename}</span>
+          <button 
+            className={styles.removeAttachment} 
+            onClick={() => {
+              setDocFilename(null);
+              setDocPreview(null);
+              setDocUploadId(null);
+            }}
+            aria-label="Remove attachment"
+          >
+            ✕
+          </button>
         </div>
       )}
       <div
