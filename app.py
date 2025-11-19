@@ -706,25 +706,24 @@ async def upload_file():
         
         # Fallback to basic text extraction if Document Intelligence not available or failed
         if not text_preview:
-            try:
-                if ext in ['txt', 'md', 'csv', 'json', 'log']:
-                    try:
-                        text_preview = file_bytes.decode('utf-8', errors='replace')
-                    except Exception:
-                        text_preview = ''
+            if ext in ['txt', 'md', 'csv', 'json', 'log']:
+                try:
+                    text_preview = file_bytes.decode('utf-8', errors='replace')
+                except Exception:
+                    text_preview = ''
 
-                elif ext == 'pdf':
-                    try:
-                        from PyPDF2 import PdfReader
-                        reader = PdfReader(saved_path)
-                        pages = []
-                        for page in reader.pages:
-                            try:
-                                pages.append(page.extract_text() or '')
-                            except Exception:
-                                continue
-                        text_preview = '\n'.join(pages)
-                    except Exception:
+            elif ext == 'pdf':
+                try:
+                    from PyPDF2 import PdfReader
+                    reader = PdfReader(saved_path)
+                    pages = []
+                    for page in reader.pages:
+                        try:
+                            pages.append(page.extract_text() or '')
+                        except Exception:
+                            continue
+                    text_preview = '\n'.join(pages)
+                except Exception:
                     text_preview = ''
 
             elif ext in ['docx', 'doc']:
@@ -773,10 +772,6 @@ async def upload_file():
                         text_preview = rtf_to_text(rtf_content)
                 except Exception:
                     text_preview = ''
-
-            except Exception:
-                logging.exception('Error during document text extraction')
-                text_preview = ''
 
         # Truncate preview to support larger documents (up to ~100K chars for GPT-4)
         # This allows for documents up to ~25K words to be fully processed
